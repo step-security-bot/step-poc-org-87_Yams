@@ -25,19 +25,29 @@ concurrency:
   group: jazzy-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   Jazzy:
+    permissions:
+      contents: write  # for Git to git push
     runs-on: macos-14
     env:
       DEVELOPER_DIR: /Applications/Xcode_15.4.app
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       - name: Install SourceKitten
         run: brew install sourcekitten
       - run: swift build
       - name: Generate documentation json
         run: sourcekitten doc --spm --module-name Yams > yams.json
-      - uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@0481980f17b760ef6bca5e8c55809102a0af1e5a # v1.263.0
         with:
           ruby-version: 3.3.3
           bundler-cache: true
@@ -51,7 +61,7 @@ jobs:
             exit 1
           fi
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: API Docs
           path: docs
